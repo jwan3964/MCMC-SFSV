@@ -1,0 +1,57 @@
+clear;
+close;
+addpath('C:\matbugs')
+clc;
+
+%load data
+load('simout_n')
+data = Rrec;
+y = data;
+
+%specify sample length
+n=size(data,1);
+
+%combine data, compile datastructure
+dataStruct = struct('N',n,'y',y);
+
+%specify the number of chains
+Nchains = 2;
+
+%specify initial values of each parameter for each chain
+clear initStructs S
+for i = 1:Nchains
+    S.tauh = 1/0.1^2;
+    S.theta1 = 0.3;
+    S.theta2 = 0.5;
+    S.theta3 = 0.7;
+    S.phistar = 0.98;
+    %S.df = 50;
+initStructs(i) = S;
+end
+
+[samples, stats] = matbugs(dataStruct, ...
+		fullfile(pwd, 'bayes.txt'), ...
+		'init', initStructs, ...
+        'nChains', Nchains, ...
+		'view', 0, 'nburnin', 50000, 'nsamples', 10000, ...
+		'thin', 100, ...
+		'monitorParams', {'theta1','theta2','theta3','sigmah',...
+        'phi','h'}, ...
+		'refreshrate', 10000, ...
+        'Bugdir', 'C:\WinBUGS14');
+
+    
+save('bayes_n_result')  
+
+
+%% display result
+%disp(stats.Rhat)
+
+
+%% Diagnostic plots
+figure
+plot(hrec)
+hold on
+ht = stats.mean.h;
+plot(ht)
+
