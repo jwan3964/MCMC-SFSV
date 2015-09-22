@@ -1,0 +1,52 @@
+#BUGS code for multivariate-SV
+#Model: y[t] = theta * exp(0.5 * h[t]) * esp          esp is the measurement noise
+#       h[t] = phi * h[t-1] + eta       eta is the state noise
+#inputs required are: N for observations; y1:3[1:N] for returns
+ 
+model {
+
+for (i in 1:N) {
+
+        y[i,1:3]~dmt(meany[],tauy[i,,],df)
+        
+        tauy[i,1,1]<-1/(exp(h[i])*pow(theta1,2))
+        tauy[i,2,2]<-1/(exp(h[i])*pow(theta2,2))
+        tauy[i,3,3]<-1/(exp(h[i])*pow(theta3,2))
+        tauy[i,1,2]<-0
+        tauy[i,1,3]<-0
+        tauy[i,2,1]<-0
+        tauy[i,2,3]<-0
+        tauy[i,3,1]<-0
+        tauy[i,3,2]<-0
+
+}
+
+for (i in 2:N) {
+
+        meanh[i]<-phi*h[i-1]
+        h[i]~dnorm(meanh[i],tauh)
+}
+
+#assign prior distributions
+
+meany[1]<-0
+meany[2]<-0
+meany[3]<-0
+
+phi<-2*phistar-1            #state AR
+phistar~dbeta(1,1)
+
+tauh~dgamma(0.01,0.001)       #state noise
+sigmah<-1/sqrt(tauh)
+
+theta1~dexp(1)                 #measurement coefficients
+theta2~dexp(1)       
+theta3~dexp(1)
+    
+df~dexp(0.5)         #degrees of freedom for student-t
+
+#State at t=1
+
+tauh0<-tauh*(1-pow(phi,2))
+h[1]~dnorm(0,tauh0)
+}
